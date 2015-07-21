@@ -1,11 +1,30 @@
 package com.example.opanjwani.heartzonetraining;
 
+import android.app.Activity;
+import android.util.Log;
+
 public class IntervalManager {
 
+    private static int NUM_REPS;
     private static IntervalManager instance;
 
     private enum State {
-        PREP, WORK, REST
+        PREP {
+            public String toString() {
+                return "PREP";
+            }
+        },
+        WORK {
+            public String toString() {
+                return "WORK";
+            }
+        },
+        REST {
+            public String toString() {
+                return "REST";
+            }
+        }
+
     }
 
     private int prepTime;
@@ -13,26 +32,87 @@ public class IntervalManager {
     private int restTime;
     private int numReps;
     private int cycle;
-    private Listener listener;
+    private int currentRepTime;
 
-    private IntervalManager() {  }
+    private Listener listener;
+    private State previousState;
+    private State currentState;
+
+    private IntervalManager() {
+    }
 
     public static IntervalManager getInstance() {
-        if(instance == null){
+        if (instance == null) {
             instance = new IntervalManager();
         }
         return instance;
     }
 
-    public void init (int prepTime, int workTime, int restTime, int numReps) {
+    public void init(int prepTime, int workTime, int restTime, int numReps) {
         this.prepTime = prepTime;
         this.workTime = workTime;
         this.restTime = restTime;
         this.numReps = numReps;
-        cycle = prepTime + workTime + restTime;
+        NUM_REPS = numReps;
+        cycle = workTime + restTime;
+        previousState = null;
+
     }
 
-    public interface Listener{
+    public void setListener(Listener listener) {
+        this.listener = listener;
+    }
+
+    public void destroyListener() {
+        this.listener = null;
+    }
+
+    public void onUpdate(double elapsedTime) {
+        currentRepTime = (NUM_REPS - numReps) * cycle + prepTime;
+        Log.d("######## currentRepTime", String.valueOf(currentRepTime));
+        Log.d("############### numReps", String.valueOf(numReps));
+        Log.d("########### elapsedTime", String.valueOf(elapsedTime));
+        Log.d("############## prepTime", String.valueOf(prepTime));
+        Log.d("############## workTime", String.valueOf(workTime));
+        Log.d("############## restTime", String.valueOf(restTime));
+
+        switch (getState(elapsedTime)) {
+            case PREP:
+                currentState = State.PREP;
+                break;
+            case WORK:
+                currentState = State.WORK;
+                break;
+            case REST:
+                currentState = State.REST;
+                break;
+        }
+
+        if (numReps > 0 && elapsedTime >= (restTime + workTime + currentRepTime)) {
+            numReps--;
+            if (numReps == 0) {
+                listener.onIntervalFinished();
+            }
+        }
+
+        if (previousState != currentState) {
+            previousState = currentState;
+            listener.onStateChanged(currentState.toString());
+        }
+    }
+
+    public State getState(double elapsedTime) {
+        if (prepTime >= elapsedTime) {
+            return State.PREP;
+        } else if ((workTime + currentRepTime) >= elapsedTime && elapsedTime >= (currentRepTime)) {
+            return State.WORK;
+        } else if ((restTime + workTime + currentRepTime) >= elapsedTime && elapsedTime >= (workTime + currentRepTime)) {
+            return State.REST;
+        }
+        return null;
+    }
+
+    public interface Listener {
         void onIntervalFinished();
         void onStateChanged(String state);
     }

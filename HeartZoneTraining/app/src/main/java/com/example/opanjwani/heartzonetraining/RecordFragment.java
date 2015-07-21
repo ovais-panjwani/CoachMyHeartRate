@@ -34,7 +34,7 @@ import java.util.concurrent.RecursiveTask;
 
 import static com.ua.sdk.datapoint.BaseDataTypes.TYPE_HEART_RATE;
 
-public class RecordFragment extends BaseFragment {
+public class RecordFragment extends BaseFragment implements IntervalManager.Listener{
 
     public static final String SESSION_NAME = "RecordSession";
     public static final String DATA_SOURCE_HEART_RATE = "heart_rate_data_source";
@@ -59,6 +59,7 @@ public class RecordFragment extends BaseFragment {
     private Listener listener;
     private boolean started;
     private IntervalManager intervalManager;
+    private Activity activity;
 
     @Override
     protected int getTitleId() {
@@ -70,6 +71,7 @@ public class RecordFragment extends BaseFragment {
         super.onAttach(activity);
         listener = (Listener) activity;
         context = activity.getApplicationContext();
+        this.activity = activity;
     }
 
     @Nullable
@@ -121,6 +123,7 @@ public class RecordFragment extends BaseFragment {
         super.onResume();
         User user;
 
+        intervalManager.setListener(this);
         try {
             user = userManager.getCurrentUser();
         } catch (UaException e) {
@@ -155,6 +158,24 @@ public class RecordFragment extends BaseFragment {
         } else {
             bindRecordSession();
         }
+    }
+
+    @Override
+    public void onPause() {
+        super.onPause();
+        intervalManager.destroyListener();
+    }
+
+    @Override
+    public void onIntervalFinished() {
+        recorder.stopSegment();
+        started = false;
+        Log.d("###### recorderFinished", String.valueOf(started));
+    }
+
+    @Override
+    public void onStateChanged(String state) {
+        activityText.setText(state);
     }
 
     private class MyScannerOnClickListener implements View.OnClickListener {
@@ -214,29 +235,7 @@ public class RecordFragment extends BaseFragment {
         public void onTimeUpdated(double activeTime, double elapsedTime) {
             //timeValue.setText(formatTime(activeTime));
             if (started) {
-//                int currentRepTime = (Integer.valueOf(reps.getText().toString()) - numReps) * cycle;
-//                Log.d("######## currentRepTime",String.valueOf(currentRepTime));
-//                Log.d("############### numReps",String.valueOf(numReps));
-//                Log.d("########### elapsedTime",String.valueOf(elapsedTime));
-//                Log.d("############## prepTime",String.valueOf(prepTime));
-//                Log.d("############## workTime",String.valueOf(workTime));
-//                Log.d("############## restTime",String.valueOf(restTime));
-//                if ((prepTime + currentRepTime) >= elapsedTime) {
-//                    activityText.setText("PREP");
-//                } else if ((workTime + prepTime + currentRepTime) >= elapsedTime && elapsedTime >= (prepTime + currentRepTime)) {
-//                    activityText.setText("WORK");
-//                } else if ((restTime + workTime + prepTime + currentRepTime) >= elapsedTime && elapsedTime >= (workTime + prepTime + currentRepTime)) {
-//                    activityText.setText("REST");
-//                }
-//
-//                if (numReps > 0 && elapsedTime >= (restTime + workTime + prepTime + currentRepTime)) {
-//                    numReps--;
-//                    if (numReps == 0) {
-//                        recorder.stopSegment();
-//                        started = false;
-//                        Log.d("###### recorderFinished",String.valueOf(started));
-//                    }
-//                }
+                intervalManager.onUpdate(elapsedTime);
             }
         }
     }
