@@ -67,16 +67,10 @@ public class IntervalManager {
         this.listener = null;
     }
 
-    public void onUpdate(double elapsedTime) {
+    public void onUpdate(double activeTime) {
         currentRepTime = (NUM_REPS - numReps) * cycle + prepTime;
-        Log.d("######## currentRepTime", String.valueOf(currentRepTime));
-        Log.d("############### numReps", String.valueOf(numReps));
-        Log.d("########### elapsedTime", String.valueOf(elapsedTime));
-        Log.d("############## prepTime", String.valueOf(prepTime));
-        Log.d("############## workTime", String.valueOf(workTime));
-        Log.d("############## restTime", String.valueOf(restTime));
 
-        switch (getState(elapsedTime)) {
+        switch (getState(activeTime)) {
             case PREP:
                 currentState = State.PREP;
                 break;
@@ -88,7 +82,7 @@ public class IntervalManager {
                 break;
         }
 
-        if (numReps > 0 && elapsedTime >= (restTime + workTime + currentRepTime)) {
+        if (numReps > 0 && activeTime >= (restTime + workTime + currentRepTime)) {
             numReps--;
             if (numReps == 0) {
                 listener.onIntervalFinished();

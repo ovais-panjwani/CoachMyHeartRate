@@ -5,6 +5,7 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -15,6 +16,7 @@ import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.ua.sdk.LocalDate;
 import com.ua.sdk.Ua;
 import com.ua.sdk.UaException;
 import com.ua.sdk.UaLog;
@@ -30,6 +32,16 @@ import com.ua.sdk.recorder.RecorderObserver;
 import com.ua.sdk.recorder.data.DataFrameObserver;
 import com.ua.sdk.user.User;
 import com.ua.sdk.user.UserManager;
+
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Collection;
+import java.util.Date;
+import java.util.GregorianCalendar;
+import java.util.Iterator;
+import java.util.List;
+import java.util.ListIterator;
+import java.util.Locale;
 
 import static com.ua.sdk.datapoint.BaseDataTypes.TYPE_HEART_RATE;
 
@@ -62,9 +74,11 @@ public class RecordFragment extends BaseFragment implements IntervalManager.List
     private Listener listener;
     private boolean started;
     private boolean notFirstRun;
+    private int age;
     private MyCheckFirstRunTask checkFirstRunTask;
     private IntervalManager intervalManager;
     private int restingHeartRate;
+    private ArrayList<HeartRateZone> heartRateZones;
 
     @Override
     protected int getTitleId() {
@@ -88,6 +102,11 @@ public class RecordFragment extends BaseFragment implements IntervalManager.List
         ua = uaWrapper.getUa();
         recorderManager = ua.getRecorderManager();
         userManager = ua.getUserManager();
+        try {
+            age = extractAge(userManager.getCurrentUser().getBirthdate());
+        } catch (UaException e) {
+            UaLog.error("User was not fetched in time.");
+        }
         intervalManager = IntervalManager.getInstance();
 
         heartRateDataSourceIdentifier = recorderManager.getDataSourceIdentifierBuilder().setName(DATA_SOURCE_HEART_RATE)
@@ -195,8 +214,7 @@ public class RecordFragment extends BaseFragment implements IntervalManager.List
         SharedPreferences.Editor editor = getSharedPreferences(REST_HEART_RATE_PREF_NAME).edit();
         editor.putInt(REST_HEART_RATE_VALUE, restingHeartRate);
         editor.apply();
-        Log.d("####### initial rhr", String.valueOf(restingHeartRate));
-        Log.d("####### set rhr", String.valueOf(this.restingHeartRate));
+        getHeartRateZones();
         editor = getSharedPreferences(NOT_FIRST_RUN_PREF_NAME).edit();
         editor.putBoolean(FIRST_RUN_DID_NOT_HAPPEN, true);
         editor.apply();
@@ -220,7 +238,11 @@ public class RecordFragment extends BaseFragment implements IntervalManager.List
 
         recorderObserver = new MyRecorderObserver();
         recorder.addRecorderObserver(recorderObserver);
-        Log.d("############ rhr", String.valueOf(getSharedPreferences(REST_HEART_RATE_PREF_NAME).getInt(REST_HEART_RATE_VALUE, 0)));
+
+        if (notFirstRun) {
+            restingHeartRate = getSharedPreferences(REST_HEART_RATE_PREF_NAME).getInt(REST_HEART_RATE_VALUE, 0);
+            getHeartRateZones();
+        }
     }
 
     private void checkFirstRun() {
@@ -297,6 +319,38 @@ public class RecordFragment extends BaseFragment implements IntervalManager.List
             recorder.startSegment();
         }
 
+    }
+
+    private void getHeartRateZones() {
+        heartRateZones = new ArrayList<>();
+        int maxHR = (int) (207 - (0.7 * age));
+        int reserveHR = maxHR - restingHeartRate;
+        for (int i = 1; i <= 5; i++) {
+            HeartRateZone heartRateZone = new HeartRateZone(i, (int) (maxHR - (((6 - i) * 0.1) * reserveHR)),
+                                                            (int) (maxHR - (((5 - i) * 0.1) * reserveHR)));
+            Log.d("######### " + heartRateZone.getName(), "" + heartRateZone.getStart() + " " + heartRateZone.getEnd());
+            heartRateZones.add(heartRateZone);
+        }
+    }
+
+    private static int extractAge(LocalDate userBirthdate) {
+        Calendar a = new GregorianCalendar(Locale.US);
+        a.set(Calendar.YEAR, userBirthdate.getYear());
+        a.set(Calendar.MONTH, userBirthdate.getMonth());
+        a.set(Calendar.DAY_OF_MONTH, userBirthdate.getDayOfMonth());
+        Calendar b = getCalendar(new Date());
+        int diff = b.get(Calendar.YEAR) - a.get(Calendar.YEAR);
+        if (a.get(Calendar.MONTH) > b.get(Calendar.MONTH) ||
+                (a.get(Calendar.MONTH) == b.get(Calendar.MONTH) && a.get(Calendar.DATE) > b.get(Calendar.DATE))) {
+            diff--;
+        }
+        return diff;
+    }
+
+    private static Calendar getCalendar(Date date) {
+        Calendar cal = Calendar.getInstance(Locale.US);
+        cal.setTime(date);
+        return cal;
     }
 
     public interface Listener {
