@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <color name="linkTextColor">#FF2f98d9</color>
+    <color name="bloodRed">#8A0707</color>
 </resources>

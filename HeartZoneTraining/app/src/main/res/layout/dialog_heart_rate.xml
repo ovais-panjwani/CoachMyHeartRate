@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical" android:layout_width="match_parent"
+    android:layout_height="wrap_content" android:background="@android:color/white">
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/dialog_description"
+        android:gravity="center"
+        android:textSize="20sp"
+        android:id="@+id/dialog_description"/>
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:id="@+id/rest_and_bpm"
+        android:layout_below="@+id/dialog_description">
+        <TextView
+            android:layout_width="0dp"
+            android:textSize="20sp"
+            android:text="Fitness Level"
+            android:gravity="center"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"/>
+        <TextView
+            android:layout_width="0dp"
+            android:textSize="20sp"
+            android:text="Resting Heart Rate"
+            android:gravity="center"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"/>
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_below="@+id/rest_and_bpm"
+        android:id="@+id/heart_rate_data">
+        <Spinner
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:id="@+id/health_spinner" />
+        <EditText
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:id="@+id/resting_heart_rate"/>
+    </LinearLayout>
+
+    <Button
+        android:layout_width="150dp"
+        android:layout_height="wrap_content"
+        android:text="Submit"
+        android:gravity="center"
+        android:layout_marginTop="40dp"
+        android:layout_below="@+id/heart_rate_data"
+        android:layout_centerHorizontal="true"
+        android:id="@+id/submit_button"/>
+
+</RelativeLayout>

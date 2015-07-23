@@ -2,9 +2,10 @@ package com.example.opanjwani.heartzonetraining;
 
 import android.app.Activity;
 import android.content.Context;
+import android.content.SharedPreferences;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
-import android.text.Editable;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -30,14 +31,16 @@ import com.ua.sdk.recorder.data.DataFrameObserver;
 import com.ua.sdk.user.User;
 import com.ua.sdk.user.UserManager;
 
-import java.util.concurrent.RecursiveTask;
-
 import static com.ua.sdk.datapoint.BaseDataTypes.TYPE_HEART_RATE;
 
-public class RecordFragment extends BaseFragment implements IntervalManager.Listener{
+public class RecordFragment extends BaseFragment implements IntervalManager.Listener, HeartRateZoneDialog.Listener{
 
     public static final String SESSION_NAME = "RecordSession";
     public static final String DATA_SOURCE_HEART_RATE = "heart_rate_data_source";
+    public static final String FIRST_RUN_DID_NOT_HAPPEN = "FirstRunDidNotHappen";
+    public static final String NOT_FIRST_RUN_PREF_NAME = "NotFirstRun";
+    public static final String REST_HEART_RATE_PREF_NAME = "RestingHeartRate";
+    public static final String REST_HEART_RATE_VALUE = "RestingHeartRateValue";
 
     private Recorder recorder;
     private RecorderManager recorderManager;
@@ -58,8 +61,10 @@ public class RecordFragment extends BaseFragment implements IntervalManager.List
     private Button finishButton;
     private Listener listener;
     private boolean started;
+    private boolean notFirstRun;
+    private MyCheckFirstRunTask checkFirstRunTask;
     private IntervalManager intervalManager;
-    private Activity activity;
+    private int restingHeartRate;
 
     @Override
     protected int getTitleId() {
@@ -71,7 +76,6 @@ public class RecordFragment extends BaseFragment implements IntervalManager.List
         super.onAttach(activity);
         listener = (Listener) activity;
         context = activity.getApplicationContext();
-        this.activity = activity;
     }
 
     @Nullable
@@ -79,6 +83,7 @@ public class RecordFragment extends BaseFragment implements IntervalManager.List
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         final View view = inflater.inflate(R.layout.fragment_record, container, false);
 
+        checkFirstRun();
         UaWrapper uaWrapper = UaWrapper.getInstance();
         ua = uaWrapper.getUa();
         recorderManager = ua.getRecorderManager();
@@ -114,6 +119,12 @@ public class RecordFragment extends BaseFragment implements IntervalManager.List
                 recorder.destroy();
             }
         });
+
+        if (!notFirstRun) {
+            HeartRateZoneDialog heartRateZoneDialog = HeartRateZoneDialog.getInstance();
+            heartRateZoneDialog.setListener(this);
+            heartRateZoneDialog.show(getActivity().getFragmentManager(), "Heart Rate Zone Dialog");
+        }
 
         return view;
     }
@@ -178,6 +189,23 @@ public class RecordFragment extends BaseFragment implements IntervalManager.List
         activityText.setText(state);
     }
 
+    @Override
+    public void retrieveRestingHeartRate(int restingHeartRate) {
+        this.restingHeartRate = getSharedPreferences(REST_HEART_RATE_PREF_NAME).getInt(REST_HEART_RATE_VALUE, restingHeartRate);
+        SharedPreferences.Editor editor = getSharedPreferences(REST_HEART_RATE_PREF_NAME).edit();
+        editor.putInt(REST_HEART_RATE_VALUE, restingHeartRate);
+        editor.apply();
+        Log.d("####### initial rhr", String.valueOf(restingHeartRate));
+        Log.d("####### set rhr", String.valueOf(this.restingHeartRate));
+        editor = getSharedPreferences(NOT_FIRST_RUN_PREF_NAME).edit();
+        editor.putBoolean(FIRST_RUN_DID_NOT_HAPPEN, true);
+        editor.apply();
+    }
+
+    private SharedPreferences getSharedPreferences(String key) {
+        return context.getSharedPreferences(key, Context.MODE_PRIVATE);
+    }
+
     private class MyScannerOnClickListener implements View.OnClickListener {
         @Override
         public void onClick(View v) {
@@ -192,6 +220,24 @@ public class RecordFragment extends BaseFragment implements IntervalManager.List
 
         recorderObserver = new MyRecorderObserver();
         recorder.addRecorderObserver(recorderObserver);
+        Log.d("############ rhr", String.valueOf(getSharedPreferences(REST_HEART_RATE_PREF_NAME).getInt(REST_HEART_RATE_VALUE, 0)));
+    }
+
+    private void checkFirstRun() {
+        if (checkFirstRunTask != null) {
+            checkFirstRunTask.cancel(false);
+            checkFirstRunTask = null;
+        }
+        checkFirstRunTask = new MyCheckFirstRunTask();
+        checkFirstRunTask.execute();
+    }
+
+    private class MyCheckFirstRunTask extends AsyncTask<Void, Void, Void> {
+        @Override
+        protected Void doInBackground(Void... params) {
+            notFirstRun = getSharedPreferences(NOT_FIRST_RUN_PREF_NAME).getBoolean(FIRST_RUN_DID_NOT_HAPPEN, false);
+            return null;
+        }
     }
 
     public class MyDataFrameObserver implements DataFrameObserver {
@@ -235,7 +281,7 @@ public class RecordFragment extends BaseFragment implements IntervalManager.List
         public void onTimeUpdated(double activeTime, double elapsedTime) {
             //timeValue.setText(formatTime(activeTime));
             if (started) {
-                intervalManager.onUpdate(elapsedTime);
+                intervalManager.onUpdate(activeTime);
             }
         }
     }

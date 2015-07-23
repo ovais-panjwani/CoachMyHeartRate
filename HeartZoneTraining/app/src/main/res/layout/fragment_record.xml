@@ -30,7 +30,9 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:id="@+id/prep_time"/>
+            android:id="@+id/prep_time"
+            android:imeOptions="actionNext"
+            android:singleLine="true"/>
         <TextView
             android:layout_width="0dp"
             android:layout_height="wrap_content"
@@ -42,7 +44,9 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:id="@+id/work_time"/>
+            android:id="@+id/work_time"
+            android:imeOptions="actionNext"
+            android:singleLine="true"/>
         <TextView
             android:layout_width="0dp"
             android:layout_height="wrap_content"
@@ -54,7 +58,9 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:id="@+id/rest_time"/>
+            android:id="@+id/rest_time"
+            android:imeOptions="actionNext"
+            android:singleLine="true"/>
         <TextView
             android:layout_width="0dp"
             android:layout_height="wrap_content"
@@ -66,7 +72,9 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:id="@+id/num_of_reps"/>
+            android:id="@+id/num_of_reps"
+            android:imeOptions="actionDone"
+            android:singleLine="true"/>
     </LinearLayout>
 
     <LinearLayout
@@ -108,7 +116,6 @@
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:gravity="bottom"
         android:layout_alignParentBottom="true">
         <Button
             android:layout_width="wrap_content"
