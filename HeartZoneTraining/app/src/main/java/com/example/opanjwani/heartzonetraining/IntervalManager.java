@@ -80,6 +80,8 @@ public class IntervalManager {
             case REST:
                 currentState = State.REST;
                 break;
+            default:
+                break;
         }
 
         if (numReps > 0 && activeTime >= (restTime + workTime + currentRepTime)) {
@@ -95,15 +97,16 @@ public class IntervalManager {
         }
     }
 
-    public State getState(double elapsedTime) {
-        if (prepTime >= elapsedTime) {
+    public State getState(double activeTime) {
+        if (prepTime >= activeTime) {
             return State.PREP;
-        } else if ((workTime + currentRepTime) >= elapsedTime && elapsedTime >= (currentRepTime)) {
+        } else if ((workTime + currentRepTime) >= activeTime && activeTime >= (currentRepTime)) {
             return State.WORK;
-        } else if ((restTime + workTime + currentRepTime) >= elapsedTime && elapsedTime >= (workTime + currentRepTime)) {
+        } else if ((restTime + workTime + currentRepTime) >= activeTime && activeTime >= (workTime + currentRepTime)) {
             return State.REST;
+        } else {
+            return currentState;
         }
-        return null;
     }
 
     public interface Listener {

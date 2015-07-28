@@ -5,6 +5,7 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.os.Environment;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.util.Log;
@@ -33,6 +34,10 @@ import com.ua.sdk.recorder.data.DataFrameObserver;
 import com.ua.sdk.user.User;
 import com.ua.sdk.user.UserManager;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collection;
@@ -45,7 +50,7 @@ import java.util.Locale;
 
 import static com.ua.sdk.datapoint.BaseDataTypes.TYPE_HEART_RATE;
 
-public class RecordFragment extends BaseFragment implements IntervalManager.Listener, HeartRateZoneDialog.Listener{
+public class RecordFragment extends BaseFragment implements IntervalManager.Listener, HeartRateZoneDialog.Listener {
 
     public static final String SESSION_NAME = "RecordSession";
     public static final String DATA_SOURCE_HEART_RATE = "heart_rate_data_source";
@@ -79,6 +84,7 @@ public class RecordFragment extends BaseFragment implements IntervalManager.List
     private IntervalManager intervalManager;
     private int restingHeartRate;
     private ArrayList<HeartRateZone> heartRateZones;
+    private FileOutputStream fileOutputStream;
 
     @Override
     protected int getTitleId() {
@@ -109,6 +115,18 @@ public class RecordFragment extends BaseFragment implements IntervalManager.List
         }
         intervalManager = IntervalManager.getInstance();
 
+        String state = Environment.getExternalStorageState();
+        File file = null;
+        try {
+            File filedir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
+            filedir.mkdirs();
+            file = new File(filedir, "interval_trainer.txt");
+
+            fileOutputStream = new FileOutputStream(file, true);
+        } catch (IOException e) {
+            UaLog.error("FileWriter not built.");
+        }
+
         heartRateDataSourceIdentifier = recorderManager.getDataSourceIdentifierBuilder().setName(DATA_SOURCE_HEART_RATE)
                 .setDevice(recorderManager.getDeviceBuilder().setName("Heart Rate").setManufacturer("none").setModel("none").build())
                 .build();
@@ -124,18 +142,23 @@ public class RecordFragment extends BaseFragment implements IntervalManager.List
         rest = (EditText) view.findViewById(R.id.rest_time);
         reps = (EditText) view.findViewById(R.id.num_of_reps);
         heartRateValue = (TextView) view.findViewById(R.id.high);
-        startButton = (Button)view.findViewById(R.id.start_button);
+        startButton = (Button) view.findViewById(R.id.start_button);
         startButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 onActionButton();
             }
         });
-        finishButton = (Button)view.findViewById(R.id.finish_button);
+        finishButton = (Button) view.findViewById(R.id.finish_button);
         finishButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 recorder.destroy();
+                try {
+                    fileOutputStream.close();
+                } catch (IOException e) {
+                    UaLog.error("FileWriter did not close");
+                }
             }
         });
 
@@ -194,18 +217,28 @@ public class RecordFragment extends BaseFragment implements IntervalManager.List
     public void onPause() {
         super.onPause();
         intervalManager.destroyListener();
+        try {
+            fileOutputStream.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     @Override
     public void onIntervalFinished() {
         recorder.stopSegment();
         started = false;
-        Log.d("###### recorderFinished", String.valueOf(started));
     }
 
     @Override
     public void onStateChanged(String state) {
         activityText.setText(state);
+        String data = state + "\n";
+        try {
+            fileOutputStream.write(data.getBytes());
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     @Override
@@ -265,8 +298,16 @@ public class RecordFragment extends BaseFragment implements IntervalManager.List
     public class MyDataFrameObserver implements DataFrameObserver {
         @Override
         public void onDataFrameUpdated(DataSourceIdentifier dataSourceIdentifier, DataTypeRef dataTypeRef, DataFrame dataFrame) {
-            if (dataSourceIdentifier.equals(heartRateDataSourceIdentifier)) {
-                heartRateValue.setText(formatHeartRate(dataFrame.getHeartRateDataPoint(heartRateDataSourceIdentifier).getHeartRate()));
+            heartRateValue.setText(formatHeartRate(dataFrame.getHeartRateDataPoint(heartRateDataSourceIdentifier).getHeartRate()));
+            if (started) {
+                try {
+                    String data = "" + dataFrame.getActiveTime() + " "
+                            + formatHeartRate(dataFrame.getHeartRateDataPoint(heartRateDataSourceIdentifier).getHeartRate()) + "\n";
+                    fileOutputStream.write(data.getBytes());
+                    fileOutputStream.flush();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
             }
         }
     }
@@ -280,7 +321,7 @@ public class RecordFragment extends BaseFragment implements IntervalManager.List
     }
 
     private String formatTime(double duration) {
-        int durationSeconds = (int)duration;
+        int durationSeconds = (int) duration;
         int seconds = durationSeconds % 60;
         int minutes = (durationSeconds / 60) % 60;
         int hours = (durationSeconds / 3600) % 24;
@@ -295,7 +336,7 @@ public class RecordFragment extends BaseFragment implements IntervalManager.List
 
         @Override
         public void onSegmentStateUpdated(DataFrame dataFrame) {
-           // updateActionButton(dataFrame);
+            // updateActionButton(dataFrame);
             started = dataFrame.isSegmentStarted();
         }
 
@@ -311,11 +352,10 @@ public class RecordFragment extends BaseFragment implements IntervalManager.List
     private void onActionButton() {
         if (recorder.getDataFrame().isSegmentStarted()) {
             recorder.stopSegment();
-            started = false;
         } else {
             started = true;
             intervalManager.init(Integer.valueOf(prep.getText().toString()), Integer.valueOf(work.getText().toString()),
-                                Integer.valueOf(rest.getText().toString()), Integer.valueOf(reps.getText().toString()));
+                    Integer.valueOf(rest.getText().toString()), Integer.valueOf(reps.getText().toString()));
             recorder.startSegment();
         }
 
@@ -327,7 +367,7 @@ public class RecordFragment extends BaseFragment implements IntervalManager.List
         int reserveHR = maxHR - restingHeartRate;
         for (int i = 1; i <= 5; i++) {
             HeartRateZone heartRateZone = new HeartRateZone(i, (int) (maxHR - (((6 - i) * 0.1) * reserveHR)),
-                                                            (int) (maxHR - (((5 - i) * 0.1) * reserveHR)));
+                    (int) (maxHR - (((5 - i) * 0.1) * reserveHR)));
             Log.d("######### " + heartRateZone.getName(), "" + heartRateZone.getStart() + " " + heartRateZone.getEnd());
             heartRateZones.add(heartRateZone);
         }
