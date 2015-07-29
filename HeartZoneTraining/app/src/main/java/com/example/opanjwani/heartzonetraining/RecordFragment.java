@@ -2,11 +2,10 @@ package com.example.opanjwani.heartzonetraining;
 
 import android.app.Activity;
 import android.content.Context;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.AsyncTask;
 import android.os.Bundle;
-import android.os.Environment;
-import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -34,18 +33,10 @@ import com.ua.sdk.recorder.data.DataFrameObserver;
 import com.ua.sdk.user.User;
 import com.ua.sdk.user.UserManager;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.FileWriter;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Calendar;
-import java.util.Collection;
 import java.util.Date;
 import java.util.GregorianCalendar;
-import java.util.Iterator;
-import java.util.List;
-import java.util.ListIterator;
 import java.util.Locale;
 
 import static com.ua.sdk.datapoint.BaseDataTypes.TYPE_HEART_RATE;
@@ -84,7 +75,7 @@ public class RecordFragment extends BaseFragment implements IntervalManager.List
     private IntervalManager intervalManager;
     private int restingHeartRate;
     private ArrayList<HeartRateZone> heartRateZones;
-    private FileOutputStream fileOutputStream;
+    private RecorderConfiguration config;
 
     @Override
     protected int getTitleId() {
@@ -115,18 +106,6 @@ public class RecordFragment extends BaseFragment implements IntervalManager.List
         }
         intervalManager = IntervalManager.getInstance();
 
-        String state = Environment.getExternalStorageState();
-        File file = null;
-        try {
-            File filedir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
-            filedir.mkdirs();
-            file = new File(filedir, "interval_trainer.txt");
-
-            fileOutputStream = new FileOutputStream(file, true);
-        } catch (IOException e) {
-            UaLog.error("FileWriter not built.");
-        }
-
         heartRateDataSourceIdentifier = recorderManager.getDataSourceIdentifierBuilder().setName(DATA_SOURCE_HEART_RATE)
                 .setDevice(recorderManager.getDeviceBuilder().setName("Heart Rate").setManufacturer("none").setModel("none").build())
                 .build();
@@ -154,11 +133,7 @@ public class RecordFragment extends BaseFragment implements IntervalManager.List
             @Override
             public void onClick(View v) {
                 recorder.destroy();
-                try {
-                    fileOutputStream.close();
-                } catch (IOException e) {
-                    UaLog.error("FileWriter did not close");
-                }
+                context.stopService(new Intent(context, RecorderService.class));
             }
         });
 
@@ -176,7 +151,7 @@ public class RecordFragment extends BaseFragment implements IntervalManager.List
         super.onResume();
         User user;
 
-        intervalManager.setListener(this);
+        intervalManager.addListener(this);
         try {
             user = userManager.getCurrentUser();
         } catch (UaException e) {
@@ -186,7 +161,7 @@ public class RecordFragment extends BaseFragment implements IntervalManager.List
 
         recorder = recorderManager.getRecorder(SESSION_NAME);
         if (recorder == null) {
-            final RecorderConfiguration config = recorderManager.createRecorderConfiguration();
+            config = recorderManager.createRecorderConfiguration();
             config.setName(SESSION_NAME);
             config.setUserRef(user.getRef());
             config.setActivityTypeRef(ActivityTypeRef.getBuilder().setActivityTypeId("16").build());
@@ -195,19 +170,7 @@ public class RecordFragment extends BaseFragment implements IntervalManager.List
                     .setDataSource(DerivedDataSourceConfiguration.DataSourceType.HEART_RATE_SUMMARY)
                     .setDataSourceIdentifier(heartRateSummaryDataSourceIdentifier)
                     .setPriority(0));
-
-            recorderManager.createRecorder(config, new RecorderManager.CreateCallback() {
-                @Override
-                public void onCreated(Recorder newRecorder, UaException ex) {
-                    if (ex == null) {
-                        recorder = newRecorder;
-                        bindRecordSession();
-                    } else {
-                        UaLog.error("Failed to initialize recording.", ex);
-                        Toast.makeText(context, "Failed to initialize recording.", Toast.LENGTH_SHORT).show();
-                    }
-                }
-            });
+            recorderManager.createRecorder(config, new createRecorderCallback());
         } else {
             bindRecordSession();
         }
@@ -216,29 +179,35 @@ public class RecordFragment extends BaseFragment implements IntervalManager.List
     @Override
     public void onPause() {
         super.onPause();
-        intervalManager.destroyListener();
-        try {
-            fileOutputStream.close();
-        } catch (IOException e) {
-            e.printStackTrace();
+        intervalManager.removeListener(this);
+    }
+
+    private class createRecorderCallback implements RecorderManager.CreateCallback {
+        @Override
+        public void onCreated(Recorder newRecorder, UaException ex) {
+            if (ex == null) {
+                recorder = newRecorder;
+                bindRecordSession();
+            } else {
+                UaLog.error("Failed to initialize recording.", ex);
+                Toast.makeText(context, "Failed to initialize recording.", Toast.LENGTH_SHORT).show();
+            }
         }
     }
 
     @Override
     public void onIntervalFinished() {
-        recorder.stopSegment();
-        started = false;
+        recorder.destroy();
+        context.stopService(new Intent(context, RecorderService.class));
     }
 
     @Override
     public void onStateChanged(String state) {
-        activityText.setText(state);
-        String data = state + "\n";
-        try {
-            fileOutputStream.write(data.getBytes());
-        } catch (IOException e) {
-            e.printStackTrace();
+        if (activityText != null) {
+            activityText.setText(state);
         }
+
+        String data = state + "\n";
     }
 
     @Override
@@ -298,17 +267,7 @@ public class RecordFragment extends BaseFragment implements IntervalManager.List
     public class MyDataFrameObserver implements DataFrameObserver {
         @Override
         public void onDataFrameUpdated(DataSourceIdentifier dataSourceIdentifier, DataTypeRef dataTypeRef, DataFrame dataFrame) {
-            heartRateValue.setText(formatHeartRate(dataFrame.getHeartRateDataPoint(heartRateDataSourceIdentifier).getHeartRate()));
-            if (started) {
-                try {
-                    String data = "" + dataFrame.getActiveTime() + " "
-                            + formatHeartRate(dataFrame.getHeartRateDataPoint(heartRateDataSourceIdentifier).getHeartRate()) + "\n";
-                    fileOutputStream.write(data.getBytes());
-                    fileOutputStream.flush();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
+            Log.d("###### frag", formatHeartRate(dataFrame.getHeartRateDataPoint().getHeartRate()));
         }
     }
 
@@ -343,22 +302,28 @@ public class RecordFragment extends BaseFragment implements IntervalManager.List
         @Override
         public void onTimeUpdated(double activeTime, double elapsedTime) {
             //timeValue.setText(formatTime(activeTime));
-            if (started) {
+
+            Log.d("######", "actiivetime=" + activeTime + " elapsedTime=" + elapsedTime);
+            if (started && !Double.isNaN(activeTime)) {
                 intervalManager.onUpdate(activeTime);
             }
         }
     }
 
     private void onActionButton() {
+        if (recorderManager.getRecorder(SESSION_NAME) == null) {
+            recorderManager.createRecorder(config, new createRecorderCallback());
+            bindRecordSession();
+        }
         if (recorder.getDataFrame().isSegmentStarted()) {
             recorder.stopSegment();
+            context.stopService(new Intent(context, RecorderService.class));
         } else {
-            started = true;
             intervalManager.init(Integer.valueOf(prep.getText().toString()), Integer.valueOf(work.getText().toString()),
                     Integer.valueOf(rest.getText().toString()), Integer.valueOf(reps.getText().toString()));
             recorder.startSegment();
+            context.startService(new Intent(context, RecorderService.class));
         }
-
     }
 
     private void getHeartRateZones() {

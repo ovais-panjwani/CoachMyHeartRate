@@ -3,6 +3,9 @@ package com.example.opanjwani.heartzonetraining;
 import android.app.Activity;
 import android.util.Log;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class IntervalManager {
 
     private static int NUM_REPS;
@@ -34,7 +37,7 @@ public class IntervalManager {
     private int cycle;
     private int currentRepTime;
 
-    private Listener listener;
+    private List<Listener> listeners = new ArrayList<>();
     private State previousState;
     private State currentState;
 
@@ -59,12 +62,12 @@ public class IntervalManager {
 
     }
 
-    public void setListener(Listener listener) {
-        this.listener = listener;
+    public void addListener(Listener listener) {
+        this.listeners.add(listener);
     }
 
-    public void destroyListener() {
-        this.listener = null;
+    public void removeListener(Listener listener) {
+        this.listeners.remove(listener);
     }
 
     public void onUpdate(double activeTime) {
@@ -87,13 +90,17 @@ public class IntervalManager {
         if (numReps > 0 && activeTime >= (restTime + workTime + currentRepTime)) {
             numReps--;
             if (numReps == 0) {
-                listener.onIntervalFinished();
+                for (Listener listener: listeners) {
+                    listener.onIntervalFinished();
+                }
             }
         }
 
         if (previousState != currentState) {
             previousState = currentState;
-            listener.onStateChanged(currentState.toString());
+            for (Listener listener: listeners) {
+                listener.onStateChanged(currentState.toString());
+            }
         }
     }
 
