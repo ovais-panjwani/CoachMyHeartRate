@@ -4,15 +4,19 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.graphics.Color;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.os.Vibrator;
 import android.support.annotation.Nullable;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -59,8 +63,8 @@ public class RecordFragment extends BaseFragment implements IntervalManager.List
     private UserManager userManager;
     private MyDataFrameObserver dataFrameObserver;
     private MyRecorderObserver recorderObserver;
-    private TextView heartRateValue;
     private TextView activityText;
+    private TextView heartRateScanner;
     private EditText prep;
     private EditText work;
     private EditText rest;
@@ -76,6 +80,7 @@ public class RecordFragment extends BaseFragment implements IntervalManager.List
     private int restingHeartRate;
     private ArrayList<HeartRateZone> heartRateZones;
     private RecorderConfiguration config;
+    private Vibrator vibrate;
 
     @Override
     protected int getTitleId() {
@@ -105,6 +110,7 @@ public class RecordFragment extends BaseFragment implements IntervalManager.List
             UaLog.error("User was not fetched in time.");
         }
         intervalManager = IntervalManager.getInstance();
+        vibrate = (Vibrator) context.getSystemService(Activity.VIBRATOR_SERVICE);
 
         heartRateDataSourceIdentifier = recorderManager.getDataSourceIdentifierBuilder().setName(DATA_SOURCE_HEART_RATE)
                 .setDevice(recorderManager.getDeviceBuilder().setName("Heart Rate").setManufacturer("none").setModel("none").build())
@@ -113,14 +119,23 @@ public class RecordFragment extends BaseFragment implements IntervalManager.List
                 .setDevice(recorderManager.getDeviceBuilder().setName("Heart Rate Summary").setManufacturer("none").setModel("none").build())
                 .build();
 
-        TextView heartRateScanner = (TextView) view.findViewById(R.id.heart_rate_scanner);
+        Spinner highIntensitySpinner = (Spinner) view.findViewById(R.id.high_intensity_spinner);
+        Spinner lowIntensitySpinner = (Spinner) view.findViewById(R.id.low_intensity_spinner);
+        final String[] spinnerText = {"1", "2", "3", "4", "5"};
+        ArrayAdapter<String> spinnerArrayAdapter = new ArrayAdapter<String>(context, R.layout.custom_spinner_item, spinnerText);
+        spinnerArrayAdapter.setDropDownViewResource(R.layout.custom_spinner_dropdown_item);
+        highIntensitySpinner.setAdapter(spinnerArrayAdapter);
+        highIntensitySpinner.setSelection(4);
+        lowIntensitySpinner.setAdapter(spinnerArrayAdapter);
+        lowIntensitySpinner.setSelection(0);
+
+        heartRateScanner = (TextView) view.findViewById(R.id.heart_rate_scanner);
         heartRateScanner.setOnClickListener(new MyScannerOnClickListener());
         activityText = (TextView) view.findViewById(R.id.activity_text);
         prep = (EditText) view.findViewById(R.id.prep_time);
         work = (EditText) view.findViewById(R.id.work_time);
         rest = (EditText) view.findViewById(R.id.rest_time);
         reps = (EditText) view.findViewById(R.id.num_of_reps);
-        heartRateValue = (TextView) view.findViewById(R.id.high);
         startButton = (Button) view.findViewById(R.id.start_button);
         startButton.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -134,6 +149,10 @@ public class RecordFragment extends BaseFragment implements IntervalManager.List
             public void onClick(View v) {
                 recorder.destroy();
                 context.stopService(new Intent(context, RecorderService.class));
+                heartRateScanner.setClickable(true);
+                heartRateScanner.setTextColor(getResources().getColor(R.color.linkTextColor));
+                heartRateScanner.setText(R.string.heart_rate_scanner_text);
+                heartRateScanner.setOnClickListener(new MyScannerOnClickListener());
             }
         });
 
@@ -199,12 +218,17 @@ public class RecordFragment extends BaseFragment implements IntervalManager.List
     public void onIntervalFinished() {
         recorder.destroy();
         context.stopService(new Intent(context, RecorderService.class));
+        heartRateScanner.setClickable(true);
+        heartRateScanner.setTextColor(getResources().getColor(R.color.linkTextColor));
+        heartRateScanner.setText(R.string.heart_rate_scanner_text);
+        heartRateScanner.setOnClickListener(new MyScannerOnClickListener());
     }
 
     @Override
     public void onStateChanged(String state) {
         if (activityText != null) {
             activityText.setText(state);
+            vibrate.vibrate(1000);
         }
 
         String data = state + "\n";
@@ -268,6 +292,11 @@ public class RecordFragment extends BaseFragment implements IntervalManager.List
         @Override
         public void onDataFrameUpdated(DataSourceIdentifier dataSourceIdentifier, DataTypeRef dataTypeRef, DataFrame dataFrame) {
             Log.d("###### frag", formatHeartRate(dataFrame.getHeartRateDataPoint().getHeartRate()));
+            if (dataFrame.getHeartRateDataPoint().getHeartRate() != null) {
+                heartRateScanner.setClickable(false);
+                heartRateScanner.setTextColor(Color.BLACK);
+                heartRateScanner.setText("Connected: " + formatHeartRate(dataFrame.getHeartRateDataPoint().getHeartRate()));
+            }
         }
     }
 

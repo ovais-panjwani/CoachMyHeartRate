@@ -1,11 +1,13 @@
 package com.example.opanjwani.heartzonetraining;
 
+import android.app.Activity;
 import android.app.Notification;
 import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Intent;
 import android.os.Environment;
 import android.os.IBinder;
+import android.os.Vibrator;
 import android.support.v4.app.NotificationCompat;
 import android.util.Log;
 
@@ -39,6 +41,7 @@ public class RecorderService extends Service implements IntervalManager.Listener
     private IntervalManager intervalManager;
     private FileOutputStream fileOutputStream;
     private File file;
+    private Vibrator vibrate;
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
@@ -64,6 +67,7 @@ public class RecorderService extends Service implements IntervalManager.Listener
         }
 
         intervalManager.addListener(this);
+        vibrate = (Vibrator) getSystemService(Activity.VIBRATOR_SERVICE);
 
         recorderManagerObserver = new MyRecorderManagerObserver();
         recorderManager.addRecorderManagerObserver(recorderManagerObserver);
@@ -100,6 +104,9 @@ public class RecorderService extends Service implements IntervalManager.Listener
 
     @Override
     public void onStateChanged(String state) {
+        if (vibrate != null) {
+            vibrate.vibrate(1000);
+        }
         try {
             fileOutputStream.write((state + "\n").getBytes());
         } catch (IOException e) {

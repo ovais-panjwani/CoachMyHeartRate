@@ -7,7 +7,7 @@
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Scan for Heart Rate Monitor: "
+            android:text="@string/heart_rate_scanner_text"
             android:gravity="center"
             android:textSize="20sp"
             android:textColor="@color/linkTextColor"
@@ -93,18 +93,17 @@
             android:gravity="center"
             android:textSize="20sp"
             android:layout_weight="2"/>
-        <TextView
+        <Spinner
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:text="High"
-            android:id="@+id/high"
+            android:id="@+id/high_intensity_spinner"
             android:gravity="center"
             android:textSize="20sp"
             android:layout_weight="1"/>
-        <TextView
+        <Spinner
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:text="Low"
+            android:id="@+id/low_intensity_spinner"
             android:gravity="center"
             android:textSize="20sp"
             android:layout_weight="1"/>
