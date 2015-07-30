@@ -39,9 +39,12 @@ public class RecorderService extends Service implements IntervalManager.Listener
     private boolean started;
     private Recorder recorder;
     private IntervalManager intervalManager;
+    private HeartRateZoneManager heartRateZoneManager;
     private FileOutputStream fileOutputStream;
     private File file;
     private Vibrator vibrate;
+
+    private String state = "PREP";
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
@@ -56,6 +59,7 @@ public class RecorderService extends Service implements IntervalManager.Listener
         ua = uaWrapper.getUa();
         recorderManager = ua.getRecorderManager();
         intervalManager = IntervalManager.getInstance();
+        heartRateZoneManager = HeartRateZoneManager.getInstance();
         File filedir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
         filedir.mkdirs();
         file = new File(filedir, "interval_trainer.txt");
@@ -112,6 +116,7 @@ public class RecorderService extends Service implements IntervalManager.Listener
         } catch (IOException e) {
             e.printStackTrace();
         }
+        this.state = state;
     }
 
     @Override
@@ -143,14 +148,28 @@ public class RecorderService extends Service implements IntervalManager.Listener
         @Override
         public void onDataFrameUpdated(DataSourceIdentifier dataSourceIdentifier, DataTypeRef dataTypeRef, DataFrame dataFrame) {
             Log.d("###### service", formatHeartRate(dataFrame.getHeartRateDataPoint().getHeartRate()));
+            double data = dataFrame.getHeartRateDataPoint().getHeartRate();
             if (dataFrame.isSegmentStarted() && dataTypeRef.equals(BaseDataTypes.TYPE_HEART_RATE.getRef())) {
                 try {
-                    String data = "" + dataFrame.getActiveTime() + ", " + formatHeartRate(dataFrame.getHeartRateDataPoint().getHeartRate())
+                    String dataSecBpm = "" + dataFrame.getActiveTime() + ", " + formatHeartRate(data)
                             + "\n";
-                    fileOutputStream.write(data.getBytes());
+                    fileOutputStream.write(dataSecBpm.getBytes());
                     fileOutputStream.flush();
                 } catch (IOException e) {
                     e.printStackTrace();
+                }
+                if (state.equals("WORK") && data < heartRateZoneManager.getHighIntensityStart() && dataFrame.getActiveTime() % 10 == 0 && dataFrame.getActiveTime() != 0) {
+                    long[] pattern = {100, 100, 100, 100, 100, 100, 100, 100};
+                    vibrate.vibrate(pattern, -1);
+                } else if (state.equals("WORK") && data >= heartRateZoneManager.getHighIntensityEnd() && dataFrame.getActiveTime() % 10 == 0 && dataFrame.getActiveTime() != 0) {
+                    long[] pattern = {200, 400, 200, 400, 200, 400, 200, 400, 200, 400};
+                    vibrate.vibrate(pattern, -1);
+                } else if (state.equals("REST") && data < heartRateZoneManager.getLowIntensityStart() && dataFrame.getActiveTime() % 10 == 0 && dataFrame.getActiveTime() != 0) {
+                    long[] pattern = {100, 100, 100, 100, 100, 100, 100, 100};
+                    vibrate.vibrate(pattern, -1);
+                } else if (state.equals("REST") && data >= heartRateZoneManager.getLowIntensityEnd() && dataFrame.getActiveTime() % 10 == 0 && dataFrame.getActiveTime() != 0) {
+                    long[] pattern = {200, 400, 200, 400, 200, 400, 200, 400, 200, 400};
+                    vibrate.vibrate(pattern, -1);
                 }
             }
 
