@@ -4,7 +4,9 @@ import android.app.Activity;
 import android.app.Notification;
 import android.app.PendingIntent;
 import android.app.Service;
+import android.content.Context;
 import android.content.Intent;
+import android.media.AudioManager;
 import android.os.Environment;
 import android.os.IBinder;
 import android.os.Vibrator;
@@ -37,9 +39,11 @@ public class RecorderService extends Service implements IntervalManager.Listener
     private MyDataFrameObserver dataFrameObserver;
     private MyRecorderObserver recorderObserver;
     private boolean started;
+    private int currentVolume;
     private Recorder recorder;
     private IntervalManager intervalManager;
     private HeartRateZoneManager heartRateZoneManager;
+    private ToneManager toneManager;
     private FileOutputStream fileOutputStream;
     private File file;
     private Vibrator vibrate;
@@ -60,6 +64,9 @@ public class RecorderService extends Service implements IntervalManager.Listener
         recorderManager = ua.getRecorderManager();
         intervalManager = IntervalManager.getInstance();
         heartRateZoneManager = HeartRateZoneManager.getInstance();
+        AudioManager audio = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
+        currentVolume = audio.getStreamVolume(AudioManager.STREAM_MUSIC);
+        toneManager = new ToneManager(getApplicationContext());
         File filedir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
         filedir.mkdirs();
         file = new File(filedir, "interval_trainer.txt");
@@ -110,6 +117,11 @@ public class RecorderService extends Service implements IntervalManager.Listener
     public void onStateChanged(String state) {
         if (vibrate != null) {
             vibrate.vibrate(1000);
+            if (state.equals("WORK")) {
+                toneManager.playTone(ToneManager.Tone.START, currentVolume);
+            } else if (state.equals("REST")) {
+                toneManager.playTone(ToneManager.Tone.END, currentVolume);
+            }
         }
         try {
             fileOutputStream.write((state + "\n").getBytes());
@@ -158,16 +170,20 @@ public class RecorderService extends Service implements IntervalManager.Listener
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
-                if (state.equals("WORK") && data < heartRateZoneManager.getHighIntensityStart() && dataFrame.getActiveTime() % 10 == 0 && dataFrame.getActiveTime() != 0) {
+                if (state.equals("WORK") && data < heartRateZoneManager.getHighIntensityStart() && dataFrame.getActiveTime() % 11 == 0 && dataFrame.getActiveTime() != 0) {
+                    toneManager.playTone(ToneManager.Tone.SPEED_UP, currentVolume);
                     long[] pattern = {100, 100, 100, 100, 100, 100, 100, 100};
                     vibrate.vibrate(pattern, -1);
-                } else if (state.equals("WORK") && data >= heartRateZoneManager.getHighIntensityEnd() && dataFrame.getActiveTime() % 10 == 0 && dataFrame.getActiveTime() != 0) {
+                } else if (state.equals("WORK") && data >= heartRateZoneManager.getHighIntensityEnd() && dataFrame.getActiveTime() % 11 == 0 && dataFrame.getActiveTime() != 0) {
+                    toneManager.playTone(ToneManager.Tone.SLOW_DOWN, currentVolume);
                     long[] pattern = {200, 400, 200, 400, 200, 400, 200, 400, 200, 400};
                     vibrate.vibrate(pattern, -1);
-                } else if (state.equals("REST") && data < heartRateZoneManager.getLowIntensityStart() && dataFrame.getActiveTime() % 10 == 0 && dataFrame.getActiveTime() != 0) {
+                } else if (state.equals("REST") && data < heartRateZoneManager.getLowIntensityStart() && dataFrame.getActiveTime() % 11 == 0 && dataFrame.getActiveTime() != 0) {
+                    toneManager.playTone(ToneManager.Tone.SPEED_UP, currentVolume);
                     long[] pattern = {100, 100, 100, 100, 100, 100, 100, 100};
                     vibrate.vibrate(pattern, -1);
-                } else if (state.equals("REST") && data >= heartRateZoneManager.getLowIntensityEnd() && dataFrame.getActiveTime() % 10 == 0 && dataFrame.getActiveTime() != 0) {
+                } else if (state.equals("REST") && data >= heartRateZoneManager.getLowIntensityEnd() && dataFrame.getActiveTime() % 11 == 0 && dataFrame.getActiveTime() != 0) {
+                    toneManager.playTone(ToneManager.Tone.SLOW_DOWN, currentVolume);
                     long[] pattern = {200, 400, 200, 400, 200, 400, 200, 400, 200, 400};
                     vibrate.vibrate(pattern, -1);
                 }

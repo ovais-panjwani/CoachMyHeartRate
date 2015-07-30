@@ -71,6 +71,7 @@ public class RecordFragment extends BaseFragment implements IntervalManager.List
     private EditText reps;
     private Button startButton;
     private Button finishButton;
+    private Button pauseButton;
     private Listener listener;
     private boolean started;
     private boolean notFirstRun;
@@ -145,10 +146,11 @@ public class RecordFragment extends BaseFragment implements IntervalManager.List
         startButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                onActionButton();
+                onStartButton();
             }
         });
         finishButton = (Button) view.findViewById(R.id.finish_button);
+        finishButton.setEnabled(false);
         finishButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -162,8 +164,26 @@ public class RecordFragment extends BaseFragment implements IntervalManager.List
                     lowIntensitySpinner.setEnabled(true);
                     highIntensitySpinner.setEnabled(true);
                 }
+                pauseButton.setEnabled(false);
+                finishButton.setEnabled(false);
+                startButton.setEnabled(true);
             }
         });
+        pauseButton = (Button) view.findViewById(R.id.pause_button);
+        pauseButton.setEnabled(false);
+        pauseButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (recorder.getDataFrame().isSegmentStarted()) {
+                    recorder.stopSegment();
+                    context.stopService(new Intent(context, RecorderService.class));
+                }
+                pauseButton.setEnabled(false);
+                finishButton.setEnabled(false);
+                startButton.setEnabled(true);
+            }
+        });
+
 
         return view;
     }
@@ -268,7 +288,7 @@ public class RecordFragment extends BaseFragment implements IntervalManager.List
         dataFrameObserver = new MyDataFrameObserver();
 
         recorder.addDataFrameObserver(dataFrameObserver, TYPE_HEART_RATE.getRef());
-        Log.d("######", "got called yo" + dataFrameObserver.toString());
+        Log.d("####", "got called yo" + dataFrameObserver.toString());
 
         recorderObserver = new MyRecorderObserver();
         recorder.addRecorderObserver(recorderObserver);
@@ -356,7 +376,7 @@ public class RecordFragment extends BaseFragment implements IntervalManager.List
         }
     }
 
-    private void onActionButton() {
+    private void onStartButton() {
         if (heartRateZones == null) {
             getHeartRateZones();
         }
@@ -364,10 +384,7 @@ public class RecordFragment extends BaseFragment implements IntervalManager.List
             recorderManager.createRecorder(config, new createRecorderCallback());
             bindRecordSession();
         }
-        if (recorder.getDataFrame().isSegmentStarted()) {
-            recorder.stopSegment();
-            context.stopService(new Intent(context, RecorderService.class));
-        } else {
+        if (!recorder.getDataFrame().isSegmentStarted()) {
             intervalManager.init(Integer.valueOf(prep.getText().toString()), Integer.valueOf(work.getText().toString()),
                     Integer.valueOf(rest.getText().toString()), Integer.valueOf(reps.getText().toString()));
             heartRateZoneManager.init(heartRateZones, heartRateZones.get(lowIntensitySpinner.getSelectedItemPosition()),
@@ -377,6 +394,9 @@ public class RecordFragment extends BaseFragment implements IntervalManager.List
             lowIntensitySpinner.setEnabled(false);
             highIntensitySpinner.setEnabled(false);
         }
+        pauseButton.setEnabled(true);
+        finishButton.setEnabled(true);
+        startButton.setEnabled(false);
     }
 
     private void getHeartRateZones() {

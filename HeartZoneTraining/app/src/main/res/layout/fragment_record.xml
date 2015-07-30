@@ -129,6 +129,12 @@
         <Button
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:text="Pause"
+            android:id="@+id/pause_button"
+            android:layout_weight="1"/>
+        <Button
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
             android:text="Finish"
             android:id="@+id/finish_button"
             android:layout_weight="1"/>
