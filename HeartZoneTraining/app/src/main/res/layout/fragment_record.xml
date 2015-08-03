@@ -116,6 +116,12 @@
         android:gravity="center"
         android:id="@+id/activity_text"
         android:text="N/A"/>
+    <com.jjoe64.graphview.GraphView
+        android:layout_width="match_parent"
+        android:layout_height="200dp"
+        android:id="@+id/graph"
+        android:layout_below="@+id/activity_text"/>
+
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"

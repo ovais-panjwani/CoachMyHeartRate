@@ -12,14 +12,19 @@ import android.os.IBinder;
 import android.os.Vibrator;
 import android.support.v4.app.NotificationCompat;
 import android.util.Log;
+import android.widget.Toast;
 
 import com.ua.sdk.Ua;
+import com.ua.sdk.UaException;
 import com.ua.sdk.UaLog;
+import com.ua.sdk.activitytype.ActivityTypeRef;
 import com.ua.sdk.datapoint.BaseDataTypes;
 import com.ua.sdk.datapoint.DataFrame;
 import com.ua.sdk.datapoint.DataTypeRef;
 import com.ua.sdk.datasourceidentifier.DataSourceIdentifier;
+import com.ua.sdk.recorder.DerivedDataSourceConfiguration;
 import com.ua.sdk.recorder.Recorder;
+import com.ua.sdk.recorder.RecorderConfiguration;
 import com.ua.sdk.recorder.RecorderManager;
 import com.ua.sdk.recorder.RecorderManagerObserver;
 import com.ua.sdk.recorder.RecorderObserver;
@@ -65,7 +70,7 @@ public class RecorderService extends Service implements IntervalManager.Listener
         intervalManager = IntervalManager.getInstance();
         heartRateZoneManager = HeartRateZoneManager.getInstance();
         AudioManager audio = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
-        currentVolume = audio.getStreamVolume(AudioManager.STREAM_MUSIC);
+        currentVolume = audio.getStreamMaxVolume(AudioManager.STREAM_MUSIC);
         toneManager = new ToneManager(getApplicationContext());
         File filedir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
         filedir.mkdirs();

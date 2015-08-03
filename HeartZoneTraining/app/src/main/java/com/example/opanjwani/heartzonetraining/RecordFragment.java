@@ -20,6 +20,9 @@ import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.jjoe64.graphview.GraphView;
+import com.jjoe64.graphview.series.DataPoint;
+import com.jjoe64.graphview.series.LineGraphSeries;
 import com.ua.sdk.LocalDate;
 import com.ua.sdk.Ua;
 import com.ua.sdk.UaException;
@@ -44,6 +47,7 @@ import java.util.GregorianCalendar;
 import java.util.Locale;
 
 import static com.ua.sdk.datapoint.BaseDataTypes.TYPE_HEART_RATE;
+import static com.ua.sdk.datapoint.BaseDataTypes.TYPE_HEART_RATE_SUMMARY;
 
 public class RecordFragment extends BaseFragment implements IntervalManager.Listener, HeartRateZoneDialog.Listener {
 
@@ -61,6 +65,7 @@ public class RecordFragment extends BaseFragment implements IntervalManager.List
     private Context context;
     private Ua ua;
     private UserManager userManager;
+    private User user;
     private MyDataFrameObserver dataFrameObserver;
     private MyRecorderObserver recorderObserver;
     private TextView activityText;
@@ -81,12 +86,12 @@ public class RecordFragment extends BaseFragment implements IntervalManager.List
     private HeartRateZoneManager heartRateZoneManager;
     private int restingHeartRate;
     private ArrayList<HeartRateZone> heartRateZones;
-    private RecorderConfiguration config;
     private Vibrator vibrate;
     private HeartRateZoneDialog heartRateZoneDialog;
     private String state;
     private Spinner lowIntensitySpinner;
     private Spinner highIntensitySpinner;
+    private LineGraphSeries<DataPoint> dataPoints;
 
     @Override
     protected int getTitleId() {
@@ -125,6 +130,14 @@ public class RecordFragment extends BaseFragment implements IntervalManager.List
                 .setDevice(recorderManager.getDeviceBuilder().setName("Heart Rate Summary").setManufacturer("none").setModel("none").build())
                 .build();
 
+        GraphView graph = (GraphView) view.findViewById(R.id.graph);
+        // new DataPoint[] { new DataPoint(0, 0) }
+        dataPoints = new LineGraphSeries<>();
+        graph.addSeries(dataPoints);
+        graph.getViewport().setYAxisBoundsManual(true);
+        graph.getViewport().setMinY(30);
+        graph.getViewport().setMaxY(200);
+
         highIntensitySpinner = (Spinner) view.findViewById(R.id.high_intensity_spinner);
         lowIntensitySpinner = (Spinner) view.findViewById(R.id.low_intensity_spinner);
         final String[] spinnerText = {"1", "2", "3", "4", "5"};
@@ -155,6 +168,9 @@ public class RecordFragment extends BaseFragment implements IntervalManager.List
             @Override
             public void onClick(View v) {
                 if (recorderManager.getRecorder(SESSION_NAME) != null) {
+                    startButton.setEnabled(false);
+                    finishButton.setEnabled(false);
+                    pauseButton.setEnabled(false);
                     recorder.destroy();
                     context.stopService(new Intent(context, RecorderService.class));
                     heartRateScanner.setClickable(true);
@@ -163,6 +179,9 @@ public class RecordFragment extends BaseFragment implements IntervalManager.List
                     heartRateScanner.setOnClickListener(new MyScannerOnClickListener());
                     lowIntensitySpinner.setEnabled(true);
                     highIntensitySpinner.setEnabled(true);
+                    if (recorderManager.getRecorder(SESSION_NAME) == null) {
+                        setUpRecorder();
+                    }
                 }
                 pauseButton.setEnabled(false);
                 finishButton.setEnabled(false);
@@ -180,7 +199,6 @@ public class RecordFragment extends BaseFragment implements IntervalManager.List
                 }
                 pauseButton.setEnabled(false);
                 finishButton.setEnabled(false);
-                startButton.setEnabled(true);
             }
         });
 
@@ -191,7 +209,6 @@ public class RecordFragment extends BaseFragment implements IntervalManager.List
     @Override
     public void onResume() {
         super.onResume();
-        User user;
 
         checkFirstRun();
         heartRateZoneDialog = HeartRateZoneDialog.getInstance();
@@ -206,16 +223,7 @@ public class RecordFragment extends BaseFragment implements IntervalManager.List
 
         recorder = recorderManager.getRecorder(SESSION_NAME);
         if (recorder == null) {
-            config = recorderManager.createRecorderConfiguration();
-            config.setName(SESSION_NAME);
-            config.setUserRef(user.getRef());
-            config.setActivityTypeRef(ActivityTypeRef.getBuilder().setActivityTypeId("16").build());
-
-            config.addDataSource(recorderManager.createDerivedDataSourceConfiguration()
-                    .setDataSource(DerivedDataSourceConfiguration.DataSourceType.HEART_RATE_SUMMARY)
-                    .setDataSourceIdentifier(heartRateSummaryDataSourceIdentifier)
-                    .setPriority(0));
-            recorderManager.createRecorder(config, new createRecorderCallback());
+            setUpRecorder();
         } else {
             bindRecordSession();
         }
@@ -227,12 +235,13 @@ public class RecordFragment extends BaseFragment implements IntervalManager.List
         intervalManager.removeListener(this);
     }
 
-    private class createRecorderCallback implements RecorderManager.CreateCallback {
+    private class CreateRecorderCallback implements RecorderManager.CreateCallback {
         @Override
         public void onCreated(Recorder newRecorder, UaException ex) {
             if (ex == null) {
                 recorder = newRecorder;
                 bindRecordSession();
+                startButton.setEnabled(true);
             } else {
                 UaLog.error("Failed to initialize recording.", ex);
                 Toast.makeText(context, "Failed to initialize recording.", Toast.LENGTH_SHORT).show();
@@ -240,16 +249,37 @@ public class RecordFragment extends BaseFragment implements IntervalManager.List
         }
     }
 
+    private void setUpRecorder() {
+        RecorderConfiguration config = recorderManager.createRecorderConfiguration();
+        config.setName(SESSION_NAME);
+        config.setUserRef(user.getRef());
+        config.setActivityTypeRef(ActivityTypeRef.getBuilder().setActivityTypeId("16").build());
+
+        config.addDataSource(recorderManager.createDerivedDataSourceConfiguration()
+                .setDataSource(DerivedDataSourceConfiguration.DataSourceType.HEART_RATE_SUMMARY)
+                .setDataSourceIdentifier(heartRateSummaryDataSourceIdentifier)
+                .setPriority(0));
+        recorderManager.createRecorder(config, new CreateRecorderCallback());
+    }
+
     @Override
     public void onIntervalFinished() {
-        recorder.destroy();
-        context.stopService(new Intent(context, RecorderService.class));
-        heartRateScanner.setClickable(true);
-        heartRateScanner.setTextColor(getResources().getColor(R.color.linkTextColor));
-        heartRateScanner.setText(R.string.heart_rate_scanner_text);
-        heartRateScanner.setOnClickListener(new MyScannerOnClickListener());
-        lowIntensitySpinner.setEnabled(true);
-        highIntensitySpinner.setEnabled(true);
+        if (recorder != null) {
+            startButton.setEnabled(false);
+            finishButton.setEnabled(false);
+            pauseButton.setEnabled(false);
+            recorder.destroy();
+            context.stopService(new Intent(context, RecorderService.class));
+            heartRateScanner.setClickable(true);
+            heartRateScanner.setTextColor(getResources().getColor(R.color.linkTextColor));
+            heartRateScanner.setText(R.string.heart_rate_scanner_text);
+            heartRateScanner.setOnClickListener(new MyScannerOnClickListener());
+            lowIntensitySpinner.setEnabled(true);
+            highIntensitySpinner.setEnabled(true);
+            if (recorderManager.getRecorder(SESSION_NAME) == null) {
+                setUpRecorder();
+            }
+        }
     }
 
     @Override
@@ -287,7 +317,7 @@ public class RecordFragment extends BaseFragment implements IntervalManager.List
     private void bindRecordSession() {
         dataFrameObserver = new MyDataFrameObserver();
 
-        recorder.addDataFrameObserver(dataFrameObserver, TYPE_HEART_RATE.getRef());
+        recorder.addDataFrameObserver(dataFrameObserver, TYPE_HEART_RATE.getRef(), TYPE_HEART_RATE_SUMMARY.getRef());
         Log.d("####", "got called yo" + dataFrameObserver.toString());
 
         recorderObserver = new MyRecorderObserver();
@@ -332,7 +362,9 @@ public class RecordFragment extends BaseFragment implements IntervalManager.List
                 heartRateScanner.setClickable(false);
                 heartRateScanner.setTextColor(Color.BLACK);
                 heartRateScanner.setText("Connected: " + formatHeartRate(dataFrame.getHeartRateDataPoint().getHeartRate()));
-
+            }
+            if (dataFrame.isSegmentStarted()) {
+                dataPoints.appendData(new DataPoint(dataFrame.getActiveTime(), data), true, 10000);
             }
         }
     }
@@ -379,10 +411,6 @@ public class RecordFragment extends BaseFragment implements IntervalManager.List
     private void onStartButton() {
         if (heartRateZones == null) {
             getHeartRateZones();
-        }
-        if (recorderManager.getRecorder(SESSION_NAME) == null) {
-            recorderManager.createRecorder(config, new createRecorderCallback());
-            bindRecordSession();
         }
         if (!recorder.getDataFrame().isSegmentStarted()) {
             intervalManager.init(Integer.valueOf(prep.getText().toString()), Integer.valueOf(work.getText().toString()),

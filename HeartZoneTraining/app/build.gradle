@@ -20,6 +20,7 @@ android {
         versionName "1.0"
         buildConfigField "String", "CLIENT_KEY", "\"${uasdk.clientKey}\""
         buildConfigField "String", "CLIENT_SECRET", "\"${uasdk.clientSecret}\""
+        multiDexEnabled true
     }
     buildTypes {
         release {
@@ -34,4 +35,5 @@ dependencies {
     compile 'com.android.support:appcompat-v7:22.2.0'
     compile 'com.google.code.gson:gson:2.3.1' // Json parsing
     compile files('src/main/java/libs/uasdk-2.0.1.jar')
+    compile 'com.jjoe64:graphview:4.0.1'
 }
