@@ -22,4 +22,7 @@
 
     <string name="dialog_description">Please provide an estimation of your fitness level to generate accurate heart zones.</string>
     <string name="heart_rate_scanner_text">Click here to scan for Heart Rate Monitor: </string>
+
+    <string name="message_wait">Wait</string>
+    <string name="message_continue">Continue</string>
 </resources>

@@ -76,7 +76,7 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:id="@+id/num_of_reps"
-            android:imeOptions="actionDone"
+            android:imeOptions="actionNext"
             android:singleLine="true"
             android:inputType="number"/>
     </LinearLayout>
@@ -85,7 +85,53 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
+        android:id="@+id/nagging_data"
         android:layout_below="@+id/tabata_data">
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="2"
+            android:textSize="20sp"
+            android:text="Nag Intervals"
+            android:gravity="center"/>
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:textSize="20sp"
+            android:text="B/W"
+            android:gravity="center"/>
+        <EditText
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:id="@+id/nagging_between"
+            android:imeOptions="actionNext"
+            android:singleLine="true"
+            android:inputType="number"/>
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:textSize="20sp"
+            android:text="Dur."
+            android:gravity="center"/>
+        <EditText
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:id="@+id/nagging_during"
+            android:imeOptions="actionDone"
+            android:singleLine="true"
+            android:inputType="number"/>
+
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_below="@+id/nagging_data">
         <TextView
             android:layout_width="0dp"
             android:layout_height="wrap_content"
@@ -108,17 +154,22 @@
             android:textSize="20sp"
             android:layout_weight="1"/>
     </LinearLayout>
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="30dp"
+        android:layout_below="@+id/nagging_data"
+        android:id="@+id/empty_view"/>
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:textSize="120sp"
-        android:layout_below="@+id/tabata_data"
+        android:textSize="40sp"
+        android:layout_below="@+id/empty_view"
         android:gravity="center"
         android:id="@+id/activity_text"
         android:text="N/A"/>
     <com.jjoe64.graphview.GraphView
         android:layout_width="match_parent"
-        android:layout_height="200dp"
+        android:layout_height="250dp"
         android:id="@+id/graph"
         android:layout_below="@+id/activity_text"/>
 

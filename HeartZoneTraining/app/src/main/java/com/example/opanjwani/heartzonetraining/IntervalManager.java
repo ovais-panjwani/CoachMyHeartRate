@@ -34,6 +34,8 @@ public class IntervalManager {
     private int workTime;
     private int restTime;
     private int numReps;
+    private int nagDuringTime;
+    private int nagBetwenTime;
     private int cycle;
     private int currentRepTime;
 
@@ -51,11 +53,13 @@ public class IntervalManager {
         return instance;
     }
 
-    public void init(int prepTime, int workTime, int restTime, int numReps) {
+    public void init(int prepTime, int workTime, int restTime, int numReps, int nagDuringTime, int nagBetwenTime) {
         this.prepTime = prepTime;
         this.workTime = workTime;
         this.restTime = restTime;
         this.numReps = numReps;
+        this.nagDuringTime = nagDuringTime;
+        this.nagBetwenTime = nagBetwenTime;
         NUM_REPS = numReps;
         cycle = workTime + restTime;
         previousState = null;
@@ -102,6 +106,30 @@ public class IntervalManager {
                 listener.onStateChanged(currentState.toString());
             }
         }
+    }
+
+    public int getPrepTime() {
+        return prepTime;
+    }
+
+    public int getWorkTime() {
+        return workTime;
+    }
+
+    public int getRestTime() {
+        return restTime;
+    }
+
+    public int getNumReps() {
+        return NUM_REPS;
+    }
+
+    public int getNagDuringTime() {
+        return nagDuringTime;
+    }
+
+    public int getNagBetwenTime() {
+        return nagBetwenTime;
     }
 
     public State getState(double activeTime) {

@@ -39,6 +39,9 @@ public class ToneManager {
             case START:
                 toneRes = R.raw.coaching_chime_start;
                 break;
+            case MAINTAIN:
+                toneRes = R.raw.coaching_chime_maintain;
+                break;
 
             default:
                 throw new RuntimeException("unknown tone type");
@@ -70,6 +73,7 @@ public class ToneManager {
     public enum Tone {
         END,
         SLOW_DOWN,
+        MAINTAIN,
         SPEED_UP,
         START;
     }

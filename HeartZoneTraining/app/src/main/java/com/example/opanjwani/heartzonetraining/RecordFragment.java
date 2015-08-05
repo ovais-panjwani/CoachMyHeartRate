@@ -7,6 +7,8 @@ import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Message;
 import android.os.Vibrator;
 import android.support.annotation.Nullable;
 import android.util.Log;
@@ -40,6 +42,7 @@ import com.ua.sdk.recorder.data.DataFrameObserver;
 import com.ua.sdk.user.User;
 import com.ua.sdk.user.UserManager;
 
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
@@ -74,6 +77,8 @@ public class RecordFragment extends BaseFragment implements IntervalManager.List
     private EditText work;
     private EditText rest;
     private EditText reps;
+    private EditText nagBetween;
+    private EditText nagDuring;
     private Button startButton;
     private Button finishButton;
     private Button pauseButton;
@@ -92,6 +97,9 @@ public class RecordFragment extends BaseFragment implements IntervalManager.List
     private Spinner lowIntensitySpinner;
     private Spinner highIntensitySpinner;
     private LineGraphSeries<DataPoint> dataPoints;
+    private ArrayDeque<DataPoint> waitingQueue;
+    private Handler handler;
+    private GraphView graph;
 
     @Override
     protected int getTitleId() {
@@ -122,6 +130,7 @@ public class RecordFragment extends BaseFragment implements IntervalManager.List
         intervalManager = IntervalManager.getInstance();
         heartRateZoneManager = HeartRateZoneManager.getInstance();
         vibrate = (Vibrator) context.getSystemService(Activity.VIBRATOR_SERVICE);
+        handler = new Handler();
 
         heartRateDataSourceIdentifier = recorderManager.getDataSourceIdentifierBuilder().setName(DATA_SOURCE_HEART_RATE)
                 .setDevice(recorderManager.getDeviceBuilder().setName("Heart Rate").setManufacturer("none").setModel("none").build())
@@ -130,8 +139,7 @@ public class RecordFragment extends BaseFragment implements IntervalManager.List
                 .setDevice(recorderManager.getDeviceBuilder().setName("Heart Rate Summary").setManufacturer("none").setModel("none").build())
                 .build();
 
-        GraphView graph = (GraphView) view.findViewById(R.id.graph);
-        // new DataPoint[] { new DataPoint(0, 0) }
+        graph = (GraphView) view.findViewById(R.id.graph);
         dataPoints = new LineGraphSeries<>();
         graph.addSeries(dataPoints);
         graph.getViewport().setYAxisBoundsManual(true);
@@ -155,6 +163,8 @@ public class RecordFragment extends BaseFragment implements IntervalManager.List
         work = (EditText) view.findViewById(R.id.work_time);
         rest = (EditText) view.findViewById(R.id.rest_time);
         reps = (EditText) view.findViewById(R.id.num_of_reps);
+        nagDuring = (EditText) view.findViewById(R.id.nagging_during);
+        nagBetween = (EditText) view.findViewById(R.id.nagging_between);
         startButton = (Button) view.findViewById(R.id.start_button);
         startButton.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -172,6 +182,12 @@ public class RecordFragment extends BaseFragment implements IntervalManager.List
                     finishButton.setEnabled(false);
                     pauseButton.setEnabled(false);
                     recorder.destroy();
+                    dataPoints = new LineGraphSeries<>();
+                    graph.removeAllSeries();
+                    graph.addSeries(dataPoints);
+                    graph.getViewport().setYAxisBoundsManual(true);
+                    graph.getViewport().setMinY(30);
+                    graph.getViewport().setMaxY(200);
                     context.stopService(new Intent(context, RecorderService.class));
                     heartRateScanner.setClickable(true);
                     heartRateScanner.setTextColor(getResources().getColor(R.color.linkTextColor));
@@ -210,6 +226,13 @@ public class RecordFragment extends BaseFragment implements IntervalManager.List
     public void onResume() {
         super.onResume();
 
+        if (recorderManager.getRecorder(SESSION_NAME) != null && recorder != null) {
+            if (recorder.getDataFrame().isSegmentStarted()) {
+                waitingQueue = new ArrayDeque<>();
+                MyQueueAdderTask task = new MyQueueAdderTask();
+                task.execute();
+            }
+        }
         checkFirstRun();
         heartRateZoneDialog = HeartRateZoneDialog.getInstance();
         heartRateZoneDialog.setListener(this);
@@ -233,6 +256,33 @@ public class RecordFragment extends BaseFragment implements IntervalManager.List
     public void onPause() {
         super.onPause();
         intervalManager.removeListener(this);
+    }
+
+
+    private class MyQueueAdderTask extends AsyncTask<Void, Void, Void> {
+        @Override
+        protected void onPreExecute() {
+            Message msg = handler.obtainMessage(0, R.string.message_wait);
+            handler.sendMessage(msg);
+
+        }
+
+        @Override
+        protected Void doInBackground(Void... params) {
+            for(DataFrame dataFrame: recorder.getAllDataFrames()) {
+                if (!Double.isNaN(dataFrame.getActiveTime()) && !Double.isNaN(dataFrame.getHeartRateDataPoint().getHeartRate()) &&
+                        dataFrame.getActiveTime() > dataPoints.getHighestValueX())
+                    dataPoints.appendData(new DataPoint(dataFrame.getActiveTime(), dataFrame.getHeartRateDataPoint().getHeartRate()),
+                            true, 10000);
+            }
+            return null;
+        }
+
+        @Override
+        protected void onPostExecute(Void aVoid) {
+            Message msg = handler.obtainMessage(0, R.string.message_continue);
+            handler.sendMessage(msg);
+        }
     }
 
     private class CreateRecorderCallback implements RecorderManager.CreateCallback {
@@ -269,6 +319,12 @@ public class RecordFragment extends BaseFragment implements IntervalManager.List
             finishButton.setEnabled(false);
             pauseButton.setEnabled(false);
             recorder.destroy();
+            dataPoints = new LineGraphSeries<>();
+            graph.removeAllSeries();
+            graph.addSeries(dataPoints);
+            graph.getViewport().setYAxisBoundsManual(true);
+            graph.getViewport().setMinY(30);
+            graph.getViewport().setMaxY(200);
             context.stopService(new Intent(context, RecorderService.class));
             heartRateScanner.setClickable(true);
             heartRateScanner.setTextColor(getResources().getColor(R.color.linkTextColor));
@@ -364,7 +420,20 @@ public class RecordFragment extends BaseFragment implements IntervalManager.List
                 heartRateScanner.setText("Connected: " + formatHeartRate(dataFrame.getHeartRateDataPoint().getHeartRate()));
             }
             if (dataFrame.isSegmentStarted()) {
-                dataPoints.appendData(new DataPoint(dataFrame.getActiveTime(), data), true, 10000);
+                if (handler.hasMessages(R.string.message_wait)) {
+                    waitingQueue.add(new DataPoint(dataFrame.getActiveTime(), data));
+                } else if (handler.hasMessages(R.string.message_continue)){
+                    handler.removeMessages(R.string.message_wait);
+                    if (!waitingQueue.isEmpty()) {
+                        for (DataPoint dataPoint : waitingQueue) {
+                            dataPoints.appendData(dataPoint, true, 10000);
+                        }
+                    }
+                    dataPoints.appendData(new DataPoint(dataFrame.getActiveTime(), data), true, 10000);
+                    handler.removeMessages(R.string.message_continue);
+                } else {
+                    dataPoints.appendData(new DataPoint(dataFrame.getActiveTime(), data), true, 10000);
+                }
             }
         }
     }
@@ -375,18 +444,6 @@ public class RecordFragment extends BaseFragment implements IntervalManager.List
         } else {
             return String.format("%.0f Bpm", heartRate);
         }
-    }
-
-    private String formatTime(double duration) {
-        int durationSeconds = (int) duration;
-        int seconds = durationSeconds % 60;
-        int minutes = (durationSeconds / 60) % 60;
-        int hours = (durationSeconds / 3600) % 24;
-
-        String secondsStr = String.format("%02d", seconds);
-        String minutesStr = String.format("%02d", minutes);
-        String hoursStr = String.format("%02d", hours);
-        return String.format("%1$s:%2$s:%3$s", hoursStr, minutesStr, secondsStr);
     }
 
     private class MyRecorderObserver implements RecorderObserver {
@@ -414,13 +471,18 @@ public class RecordFragment extends BaseFragment implements IntervalManager.List
         }
         if (!recorder.getDataFrame().isSegmentStarted()) {
             intervalManager.init(Integer.valueOf(prep.getText().toString()), Integer.valueOf(work.getText().toString()),
-                    Integer.valueOf(rest.getText().toString()), Integer.valueOf(reps.getText().toString()));
+                    Integer.valueOf(rest.getText().toString()), Integer.valueOf(reps.getText().toString()),
+                    Integer.valueOf(nagDuring.getText().toString()), Integer.valueOf(nagBetween.getText().toString()));
             heartRateZoneManager.init(heartRateZones, heartRateZones.get(lowIntensitySpinner.getSelectedItemPosition()),
                     heartRateZones.get(highIntensitySpinner.getSelectedItemPosition()));
             recorder.startSegment();
             context.startService(new Intent(context, RecorderService.class));
             lowIntensitySpinner.setEnabled(false);
             highIntensitySpinner.setEnabled(false);
+            graph.getViewport().setXAxisBoundsManual(true);
+            graph.getViewport().setMinX(0);
+            graph.getViewport().setMaxX(Integer.valueOf(prep.getText().toString()) + (Integer.valueOf(reps.getText().toString())
+                    * (Integer.valueOf(work.getText().toString()) + Integer.valueOf(rest.getText().toString()))));
         }
         pauseButton.setEnabled(true);
         finishButton.setEnabled(true);
