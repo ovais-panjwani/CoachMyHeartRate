@@ -21,26 +21,16 @@ import com.ua.sdk.UaLog;
 import com.ua.sdk.user.Gender;
 import com.ua.sdk.user.User;
 
-public class HeartRateZoneDialog extends DialogFragment {
+public class RestingHeartRateDialog extends DialogFragment {
 
     private Context context;
     private AppCompatDialog dialog;
-    private static HeartRateZoneDialog instance;
     private Ua ua;
     private User user;
     private Gender gender;
     private Listener listener;
 
-
-
-    public HeartRateZoneDialog() {
-    }
-
-    public static HeartRateZoneDialog getInstance() {
-        if (instance == null) {
-            instance = new HeartRateZoneDialog();
-        }
-        return instance;
+    public RestingHeartRateDialog() {
     }
 
     public void setListener(Listener listener) { this.listener = listener; }
