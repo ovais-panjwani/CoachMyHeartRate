@@ -1,7 +1,6 @@
 package com.example.opanjwani.heartzonetraining;
 
 import android.graphics.Color;
-import android.support.v7.app.ActionBarActivity;
 import android.app.Activity;
 import android.support.v7.app.ActionBar;
 import android.support.v4.app.Fragment;
@@ -23,7 +22,6 @@ import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
 import android.widget.TextView;
-import android.widget.Toast;
 
 /**
  * Fragment used for managing interactions for and presentation of a navigation drawer.
@@ -82,8 +80,8 @@ public class NavigationDrawerFragment extends Fragment {
         }
 
         navItems = new NavigationItem[] {
-                new NavigationItem(R.id.nav_rec_workout, getString(R.string.record_workout)),
-                new NavigationItem(R.id.nav_settings, getString(R.string.settings)),
+                new NavigationItem(R.id.nav_set_up, getString(R.string.title_record_workout)),
+                new NavigationItem(R.id.nav_settings, getString(R.string.title_settings)),
                 new NavigationItem(R.id.nav_history, getString(R.string.title_history))
         };
 
@@ -116,7 +114,7 @@ public class NavigationDrawerFragment extends Fragment {
             @Override
             public View getView(int position, View convertView, ViewGroup parent) {
                 View view = super.getView(position, convertView, parent);
-                ((TextView) view.findViewById(android.R.id.text1)).setTextColor(Color.BLACK);
+                ((TextView) view.findViewById(android.R.id.text1)).setTextColor(getResources().getColor(R.color.navDrawerTextColor));
 
                 return view;
             }

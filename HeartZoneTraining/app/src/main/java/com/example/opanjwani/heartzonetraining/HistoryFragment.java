@@ -10,7 +10,7 @@ public class HistoryFragment extends BaseFragment {
 
     @Override
     protected int getTitleId() {
-        return 0;
+        return R.string.title_history;
     }
 
     @Nullable

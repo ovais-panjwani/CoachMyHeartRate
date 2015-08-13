@@ -1,65 +1,85 @@
 <?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:orientation="vertical" android:layout_width="match_parent"
-    android:layout_height="wrap_content" android:background="@android:color/white">
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:paddingTop="24dp"
+    android:paddingLeft="24dp"
+    android:paddingRight="24dp"
+    android:paddingBottom="14dp"
+    android:background="@android:color/white"
+    android:orientation="vertical">
+
+    <TextView
+        android:id="@+id/dialog_title"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/resting_hr_text"
+        android:textColor="@color/dialogTitleColor"
+        android:textSize="20sp"
+        android:textStyle="bold"
+        />
+
+    <TextView
+        android:id="@+id/dialog_description"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/dialog_title"
+        android:text="@string/dialog_description"
+        android:textColor="@color/dialogDescriptionColor"
+        android:textSize="16sp"
+        android:layout_marginTop="8dp"
+        android:layout_marginBottom="18dp"/>
 
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="@string/dialog_description"
-        android:gravity="center"
-        android:textSize="20sp"
-        android:id="@+id/dialog_description"/>
-    <LinearLayout
+        android:id="@+id/rest_hr_text"
+        android:layout_below="@+id/dialog_description"
+        android:textColor="@color/dialogSubtitleColor"
+        android:text="Resting Heart Rate"
+        android:textSize="13sp"
+        android:layout_marginTop="2dp"
+        android:layout_marginBottom="2dp"/>
+
+    <EditText
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:id="@+id/rest_and_bpm"
-        android:layout_below="@+id/dialog_description">
-        <TextView
-            android:layout_width="0dp"
-            android:textSize="20sp"
-            android:text="Fitness Level"
-            android:gravity="center"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"/>
-        <TextView
-            android:layout_width="0dp"
-            android:textSize="20sp"
-            android:text="Resting Heart Rate"
-            android:gravity="center"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"/>
-    </LinearLayout>
+        android:id="@+id/resting_heart_rate"
+        android:layout_below="@+id/rest_hr_text"
+        android:textColor="@color/dialogEntryColor"
+        android:gravity="center"
+        android:layout_marginBottom="18dp" />
 
-    <LinearLayout
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/fit_level"
+        android:layout_below="@+id/resting_heart_rate"
+        android:textColor="@color/dialogSubtitleColor"
+        android:text="Fitness Level"
+        android:textSize="13sp"
+        android:layout_marginTop="2dp"
+        android:layout_marginBottom="2dp" />
+
+
+    <Spinner
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:layout_below="@+id/rest_and_bpm"
-        android:id="@+id/heart_rate_data">
-        <Spinner
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="1"
-            android:gravity="center"
-            android:id="@+id/health_spinner" />
-        <EditText
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:gravity="center"
-            android:id="@+id/resting_heart_rate"/>
-    </LinearLayout>
-
-    <Button
-        android:layout_width="150dp"
-        android:layout_height="wrap_content"
-        android:text="Submit"
+        android:id="@+id/health_spinner"
+        android:layout_below="@+id/fit_level"
         android:gravity="center"
-        android:layout_marginTop="40dp"
-        android:layout_below="@+id/heart_rate_data"
-        android:layout_centerHorizontal="true"
-        android:id="@+id/submit_button"/>
+        android:layout_marginBottom="26dp"/>
+
+    <TextView
+        android:id="@+id/submit_button"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/health_spinner"
+        android:textColor="@color/primaryColor"
+        android:gravity="end"
+        android:padding="10dp"
+        android:text="@string/submit_text"
+        android:textSize="15sp"
+        android:textStyle="bold"/>
 
 </RelativeLayout>

@@ -8,11 +8,13 @@ import android.support.v7.app.AppCompatDialog;
 import android.view.ContextThemeWrapper;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.view.Window;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Spinner;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.ua.sdk.Ua;
@@ -52,8 +54,8 @@ public class RestingHeartRateDialog extends DialogFragment {
         gender = user.getGender();
 
         dialog = new AppCompatDialog(context, R.style.Base_Theme_AppCompat_Dialog);
+        dialog.supportRequestWindowFeature(Window.FEATURE_NO_TITLE);
         dialog.setContentView(content);
-        dialog.setTitle("Heart Rate Zone");
         dialog.setCancelable(false);
         dialog.setCanceledOnTouchOutside(false);
 
@@ -78,7 +80,7 @@ public class RestingHeartRateDialog extends DialogFragment {
             }
         });
 
-        Button submit = (Button) content.findViewById(R.id.submit_button);
+        TextView submit = (TextView) content.findViewById(R.id.submit_button);
         submit.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {

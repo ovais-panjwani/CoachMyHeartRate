@@ -116,7 +116,7 @@ public class BluetoothScanFragment extends BaseFragment {
             Recorder recorder = recorderManager.getRecorder(RecordFragment.SESSION_NAME);
             if (recorder != null) {
                 DataSourceIdentifier dataSourceIdentifier = recorderManager.getDataSourceIdentifierBuilder()
-                        .setName(RecordFragment.DATA_SOURCE_HEART_RATE)
+                        .setName(SetUpFragment.DATA_SOURCE_HEART_RATE)
                         .setDevice(recorderManager.getDeviceBuilder().setName("Heart Rate").setManufacturer("none").setModel("none").build())
                         .build();
                 recorder.addDataSource(recorderManager.createBluetoothDataSourceConfiguration().setDeviceAddress(device.getAddress()).setDataSourceIdentifier(dataSourceIdentifier).addProfileTypes(BluetoothServiceType.HEART_RATE));

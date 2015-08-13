@@ -1,8 +1,6 @@
 package com.example.opanjwani.heartzonetraining;
 
 import android.app.Activity;
-import android.app.Notification;
-import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
@@ -10,21 +8,15 @@ import android.media.AudioManager;
 import android.os.Environment;
 import android.os.IBinder;
 import android.os.Vibrator;
-import android.support.v4.app.NotificationCompat;
 import android.util.Log;
-import android.widget.Toast;
 
 import com.ua.sdk.Ua;
-import com.ua.sdk.UaException;
 import com.ua.sdk.UaLog;
-import com.ua.sdk.activitytype.ActivityTypeRef;
 import com.ua.sdk.datapoint.BaseDataTypes;
 import com.ua.sdk.datapoint.DataFrame;
 import com.ua.sdk.datapoint.DataTypeRef;
 import com.ua.sdk.datasourceidentifier.DataSourceIdentifier;
-import com.ua.sdk.recorder.DerivedDataSourceConfiguration;
 import com.ua.sdk.recorder.Recorder;
-import com.ua.sdk.recorder.RecorderConfiguration;
 import com.ua.sdk.recorder.RecorderManager;
 import com.ua.sdk.recorder.RecorderManagerObserver;
 import com.ua.sdk.recorder.RecorderObserver;
@@ -60,6 +52,7 @@ public class RecorderService extends Service implements IntervalManager.Listener
     public int onStartCommand(Intent intent, int flags, int startId) {
         return START_STICKY;
     }
+
 
     @Override
     public void onCreate() {
@@ -303,4 +296,5 @@ public class RecorderService extends Service implements IntervalManager.Listener
             }
         }
     }
+
 }

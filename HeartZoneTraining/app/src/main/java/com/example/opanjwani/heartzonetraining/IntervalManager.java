@@ -132,6 +132,8 @@ public class IntervalManager {
         return nagBetwenTime;
     }
 
+    public String getState() { return currentState.toString(); }
+
     public State getState(double activeTime) {
         if (prepTime >= activeTime) {
             return State.PREP;

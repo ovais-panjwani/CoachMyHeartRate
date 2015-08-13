@@ -1,5 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <color name="linkTextColor">#FF2f98d9</color>
-    <color name="bloodRed">#8A0707</color>
+    <color name="textColor">#FF202020</color>
+    <color name="white">#FFFFFFFF</color>
+    <color name="secondaryColor">#FFF8F8F8</color>
+    <color name="primaryColor">#FFE66412</color>
+    <color name="navDrawerTextColor">#FF555555</color>
+
+    <color name="dialogTitleColor">#FF4D4D4D</color>
+    <color name="dialogDescriptionColor">#FF666666</color>
+    <color name="dialogEntryColor">#FF515151</color>
+    <color name="dialogSubtitleColor">#FFBBBBBB</color>
 </resources>

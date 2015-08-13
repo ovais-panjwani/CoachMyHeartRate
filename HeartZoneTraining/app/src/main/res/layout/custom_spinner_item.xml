@@ -4,5 +4,5 @@
     android:layout_height="fill_parent"
     android:gravity="top"
     android:singleLine="true"
-    android:textColor="@android:color/black"
+    android:textColor="@color/dialogEntryColor"
     android:textSize="20sp"/>

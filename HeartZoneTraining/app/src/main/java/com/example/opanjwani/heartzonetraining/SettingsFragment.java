@@ -12,7 +12,7 @@ import android.view.ViewGroup;
 public class SettingsFragment extends BaseFragment {
     @Override
     protected int getTitleId() {
-        return R.string.settings;
+        return R.string.title_settings;
     }
 
     @Nullable

@@ -26,7 +26,7 @@ import com.ua.sdk.user.User;
 public class MainActivity extends AppCompatActivity
         implements NavigationDrawerFragment.NavigationDrawerCallbacks,
                     LoginFragment.Listener, BluetoothScanFragment.Listener,
-                    RecordFragment.Listener{
+                    SetUpFragment.Listener, RecordFragment.Listener{
 
     private static String REDIRECT_URI = "uasdk" + BuildConfig.CLIENT_KEY + "://mmf.oauth/authorization_callback/";
 
@@ -197,8 +197,8 @@ public class MainActivity extends AppCompatActivity
         BaseFragment fragment = null;
 
         switch (id) {
-            case R.id.nav_rec_workout:
-                fragment = new RecordFragment();
+            case R.id.nav_set_up:
+                fragment = new SetUpFragment();
                 break;
             case R.id.nav_history:
                 fragment = new HistoryFragment();
@@ -300,7 +300,7 @@ public class MainActivity extends AppCompatActivity
 
     public void onLogin() {
         if (ua.isAuthenticated()) {
-            navigateToPage(R.id.nav_rec_workout);
+            navigateToPage(R.id.nav_set_up);
             // Set up the drawer after login
             mNavigationDrawerFragment.setUp(
                     R.id.navigation_drawer,
@@ -335,12 +335,22 @@ public class MainActivity extends AppCompatActivity
 
     @Override
     public void onBluetoothSelected() {
-        navigateToPage(R.id.nav_rec_workout);
+        navigateToPage(R.id.nav_set_up);
 
     }
 
     @Override
     public void onBleScan() {
         navigateToFragment(new BluetoothScanFragment(), true);
+    }
+
+    @Override
+    public void onStartClicked() {
+        navigateToFragment(new RecordFragment(), true);
+    }
+
+    @Override
+    public void onFinishWorkout() {
+        navigateToPage(R.id.nav_set_up);
     }
 }

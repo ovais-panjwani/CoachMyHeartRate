@@ -1,200 +1,55 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:orientation="vertical"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="@string/heart_rate_scanner_text"
-            android:gravity="center"
-            android:textSize="20sp"
-            android:textColor="@color/linkTextColor"
-            android:id="@+id/heart_rate_scanner"
-            android:clickable="true"/>
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:id="@+id/tabata_data"
-        android:layout_below="@+id/heart_rate_scanner">
-        <TextView
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:text="Prep"
-            android:gravity="center"
-            android:textSize="20sp"
-            android:layout_weight="1"/>
-        <EditText
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:id="@+id/prep_time"
-            android:imeOptions="actionNext"
-            android:singleLine="true"
-            android:inputType="number"/>
-        <TextView
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:text="Work"
-            android:gravity="center"
-            android:textSize="20sp"
-            android:layout_weight="1"/>
-        <EditText
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:id="@+id/work_time"
-            android:imeOptions="actionNext"
-            android:singleLine="true"
-            android:inputType="number"/>
-        <TextView
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:text="Rest"
-            android:gravity="center"
-            android:textSize="20sp"
-            android:layout_weight="1"/>
-        <EditText
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:id="@+id/rest_time"
-            android:imeOptions="actionNext"
-            android:singleLine="true"
-            android:inputType="number"/>
-        <TextView
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:text="Reps"
-            android:gravity="center"
-            android:textSize="20sp"
-            android:layout_weight="1"/>
-        <EditText
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:id="@+id/num_of_reps"
-            android:imeOptions="actionNext"
-            android:singleLine="true"
-            android:inputType="number"/>
-    </LinearLayout>
+    android:layout_height="match_parent"
+    android:background="@color/white">
 
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:id="@+id/nagging_data"
-        android:layout_below="@+id/tabata_data">
-        <TextView
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="2"
-            android:textSize="20sp"
-            android:text="Nag Intervals"
-            android:gravity="center"/>
-        <TextView
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:textSize="20sp"
-            android:text="B/W"
-            android:gravity="center"/>
-        <EditText
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:id="@+id/nagging_between"
-            android:imeOptions="actionNext"
-            android:singleLine="true"
-            android:inputType="number"/>
-        <TextView
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:textSize="20sp"
-            android:text="Dur."
-            android:gravity="center"/>
-        <EditText
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:id="@+id/nagging_during"
-            android:imeOptions="actionDone"
-            android:singleLine="true"
-            android:inputType="number"/>
-
-    </LinearLayout>
-
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:layout_below="@+id/nagging_data">
-        <TextView
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:text="Heart Rate Zones:"
-            android:gravity="center"
-            android:textSize="20sp"
-            android:layout_weight="2"/>
-        <Spinner
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:id="@+id/high_intensity_spinner"
-            android:gravity="center"
-            android:textSize="20sp"
-            android:layout_weight="1"/>
-        <Spinner
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:id="@+id/low_intensity_spinner"
-            android:gravity="center"
-            android:textSize="20sp"
-            android:layout_weight="1"/>
-    </LinearLayout>
-    <View
-        android:layout_width="match_parent"
-        android:layout_height="30dp"
-        android:layout_below="@+id/nagging_data"
-        android:id="@+id/empty_view"/>
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:textSize="40sp"
-        android:layout_below="@+id/empty_view"
+        android:layout_marginTop="22dp"
+        android:layout_marginBottom="6dp"
+        android:textColor="@color/textColor"
+        android:textSize="24sp"
         android:gravity="center"
         android:id="@+id/activity_text"
         android:text="N/A"/>
     <com.jjoe64.graphview.GraphView
         android:layout_width="match_parent"
-        android:layout_height="250dp"
+        android:layout_height="0dp"
+        app:seriesColor="@color/primaryColor"
+        android:layout_margin="16dp"
         android:id="@+id/graph"
-        android:layout_below="@+id/activity_text"/>
+        android:layout_weight="1"/>
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_alignParentBottom="true">
+        android:paddingLeft="16dp"
+        android:paddingRight="16dp"
+        android:paddingBottom="8dp">
         <Button
-            android:layout_width="wrap_content"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:text="Start"
-            android:id="@+id/start_button"
-            android:layout_weight="1"/>
-        <Button
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Pause"
+            android:layout_marginRight="8dp"
+            android:textColor="@color/textColor"
+            android:background="@color/secondaryColor"
+            android:text="@string/pause_text"
+            android:textSize="15sp"
             android:id="@+id/pause_button"
             android:layout_weight="1"/>
         <Button
-            android:layout_width="wrap_content"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:text="Finish"
+            android:textColor="@color/white"
+            android:background="@color/primaryColor"
+            android:layout_marginLeft="8dp"
+            android:text="@string/finish_text"
+            android:textSize="15sp"
             android:id="@+id/finish_button"
             android:layout_weight="1"/>
     </LinearLayout>
 
-</RelativeLayout>
+</LinearLayout>
